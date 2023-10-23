@@ -1,0 +1,60 @@
+﻿
+using Microsoft.AspNetCore.Mvc;
+using WebAPI.Data;
+using WebAPI.Models;
+
+namespace WebAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ClientController : ControllerBase
+    {
+        // Register a new client
+        [HttpPost("register")]
+        public IActionResult RegisterClient([FromBody] Client client)
+        {
+            if (DBManager.Insert(client))
+            {
+                return Ok("Client registered successfully.");
+            }
+            return BadRequest("Error registering client.");
+        }
+
+        // Retrieve all registered clients
+        [HttpGet("getAll")]
+        public IActionResult GetAllClients()
+        {
+            List<Client> clients = DBManager.GetAll();
+            if (clients != null)
+            {
+                return Ok(clients);
+            }
+            return NotFound("No clients found.");
+        }
+
+        // Update a client's details
+        // PUT api/clients/{id}
+        [HttpPut("{id}")]
+        public IActionResult UpdateClient(int id, [FromBody] Client updatedClient)
+        {
+            updatedClient.Id = id; // Ensure the ID from the route is set on the client object
+            if (DBManager.Update(updatedClient))
+            {
+                return Ok("Client updated successfully.");
+            }
+            return BadRequest("Error updating client.");
+        }
+
+
+        // Delete a client
+        [HttpDelete("delete/{id}")]
+        public IActionResult DeleteClient(int id)
+        {
+            if (DBManager.Delete(id))
+            {
+                return Ok("Client deleted successfully.");
+            }
+            return BadRequest($"Error deleting client with ID {id}.");
+        }
+    }
+}
