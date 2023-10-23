@@ -18,7 +18,7 @@ using System.Windows.Shapes;
 using IronPython.Hosting;
 using Microsoft.Scripting.Hosting;
 using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting;
+using System.Runtime.Remoting; 
 using System.Runtime.Remoting.Channels.Http;
 
 namespace Client
@@ -39,14 +39,13 @@ namespace Client
 
         private void StartThreads()
         {
-            networkingThread = new Thread(new ThreadStart(NetworkingThreadMethod));
-            networkingThread.Start();
+            Task.Run(() => NetworkingThreadMethodAsync()); // Start the networking method as an async task
 
             serverThread = new Thread(new ThreadStart(ServerThreadMethod));
             serverThread.Start();
         }
 
-        private void NetworkingThreadMethod()
+        private async Task NetworkingThreadMethodAsync()
         {
             while (true)
             {
@@ -54,7 +53,7 @@ namespace Client
                 {
                     var client = new RestClient("http://localhost:5080");
                     var request = new RestRequest("api/Clients/getAll", Method.Get);
-                    var response = client.Execute(request);
+                    var response = await client.ExecuteAsync(request); // Execute the request asynchronously
                     var clientsList = JsonConvert.DeserializeObject<List<ClientClass>>(response.Content);
 
                     foreach (var clientInfo in clientsList)
@@ -75,7 +74,7 @@ namespace Client
                     LogError($"Error in NetworkingThread: {ex.Message}");
                 }
 
-                Thread.Sleep(10000);
+                await Task.Delay(10000); // Use async delay instead of Thread.Sleep
             }
         }
 
