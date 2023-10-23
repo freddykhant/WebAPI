@@ -151,34 +151,4 @@ namespace Client
             Console.WriteLine(errorMessage);
         }
     }
-
-    public class RemoteService : MarshalByRefObject, IRemoteService
-    {
-        private Queue<string> jobQueue = new Queue<string>();
-
-        public bool HasJob()
-        {
-            return jobQueue.Count > 0;
-        }
-
-        public string GetJob()
-        {
-            if (HasJob())
-            {
-                return jobQueue.Dequeue();
-            }
-            return null;
-        }
-
-        public void SubmitJob(string job)
-        {
-            jobQueue.Enqueue(job);
-        }
-
-        public void SubmitResult(string result)
-        {
-            // Process the result. For now, we'll just print it.
-            Console.WriteLine($"Received result: {result}");
-        }
-    }
 }
