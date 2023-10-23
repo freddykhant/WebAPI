@@ -1,0 +1,30 @@
+﻿<Window x:Class="Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Client"
+        mc:Ignorable="d"
+        Title="Client Desktop Application" Height="450" Width="800">
+    <Grid>
+        <!-- IP Address Input -->
+        <Label Content="IP Address:" HorizontalAlignment="Left" Margin="50,50,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="ipAddressTextBox" HorizontalAlignment="Left" Height="25" Margin="150,50,0,0" VerticalAlignment="Top" Width="200"/>
+
+        <!-- Port Input -->
+        <Label Content="Port:" HorizontalAlignment="Left" Margin="50,100,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="portTextBox" HorizontalAlignment="Left" Height="25" Margin="150,100,0,0" VerticalAlignment="Top" Width="200"/>
+
+        <!-- Connect Button -->
+        <Button Content="Connect" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="50,150,0,0" Click="ConnectButton_Click"/>
+
+        <!-- Send Data Button -->
+        <Button Content="Send Data" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="200,150,0,0" Click="SendDataButton_Click"/>
+
+        <!-- Receive Data Button -->
+        <Button Content="Receive Data" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="350,150,0,0" Click="ReceiveDataButton_Click"/>
+
+        <!-- Status TextBlock to display messages -->
+        <TextBlock Name="statusTextBlock" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="50,200,0,0" Width="500" Height="100" TextWrapping="Wrap"/>
+    </Grid>
+</Window>
