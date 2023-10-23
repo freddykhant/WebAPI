@@ -13,7 +13,7 @@ namespace WebAPI.Controllers
         [HttpPost("register")]
         public IActionResult RegisterClient([FromBody] Client client)
         {
-            if (DBManager.Insert(client))
+            if (DBManager.InsertClient(client))
             {
                 return Ok("Client registered successfully.");
             }
@@ -24,7 +24,7 @@ namespace WebAPI.Controllers
         [HttpGet("getAll")]
         public IActionResult GetAllClients()
         {
-            List<Client> clients = DBManager.GetAll();
+            List<Client> clients = DBManager.GetAllClients();
             if (clients != null)
             {
                 return Ok(clients);
@@ -38,7 +38,7 @@ namespace WebAPI.Controllers
         public IActionResult UpdateClient(int id, [FromBody] Client updatedClient)
         {
             updatedClient.Id = id; // Ensure the ID from the route is set on the client object
-            if (DBManager.Update(updatedClient))
+            if (DBManager.UpdateClient(updatedClient))
             {
                 return Ok("Client updated successfully.");
             }
@@ -50,7 +50,7 @@ namespace WebAPI.Controllers
         [HttpDelete("delete/{id}")]
         public IActionResult DeleteClient(int id)
         {
-            if (DBManager.Delete(id))
+            if (DBManager.DeleteClient(id))
             {
                 return Ok("Client deleted successfully.");
             }
