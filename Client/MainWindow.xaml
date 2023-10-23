@@ -8,23 +8,38 @@
         Title="Client Desktop Application" Height="450" Width="800">
     <Grid>
         <!-- IP Address Input -->
-        <Label Content="IP Address:" HorizontalAlignment="Left" Margin="50,50,0,0" VerticalAlignment="Top"/>
-        <TextBox Name="ipAddressTextBox" HorizontalAlignment="Left" Height="25" Margin="150,50,0,0" VerticalAlignment="Top" Width="200"/>
+        <Label Content="IP Address:" HorizontalAlignment="Left" Margin="50,10,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="ipAddressTextBox" HorizontalAlignment="Left" Height="25" Margin="150,10,0,0" VerticalAlignment="Top" Width="200"/>
 
         <!-- Port Input -->
-        <Label Content="Port:" HorizontalAlignment="Left" Margin="50,100,0,0" VerticalAlignment="Top"/>
-        <TextBox Name="portTextBox" HorizontalAlignment="Left" Height="25" Margin="150,100,0,0" VerticalAlignment="Top" Width="200"/>
+        <Label Content="Port:" HorizontalAlignment="Left" Margin="50,40,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="portTextBox" HorizontalAlignment="Left" Height="25" Margin="150,40,0,0" VerticalAlignment="Top" Width="200"/>
 
         <!-- Connect Button -->
-        <Button Content="Connect" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="50,150,0,0" Click="ConnectButton_Click"/>
+        <Button Content="Connect" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="50,70,0,0" Click="ConnectButton_Click"/>
 
         <!-- Send Data Button -->
-        <Button Content="Send Data" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="200,150,0,0" Click="SendDataButton_Click"/>
+        <Button Content="Send Data" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="200,70,0,0" Click="SendDataButton_Click"/>
 
         <!-- Receive Data Button -->
-        <Button Content="Receive Data" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="350,150,0,0" Click="ReceiveDataButton_Click"/>
+        <Button Content="Receive Data" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="350,70,0,0" Click="ReceiveDataButton_Click"/>
 
         <!-- Status TextBlock to display messages -->
-        <TextBlock Name="statusTextBlock" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="50,200,0,0" Width="500" Height="100" TextWrapping="Wrap"/>
+        <TextBlock Name="statusTextBlock" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="50,110,0,0" Width="500" Height="100" TextWrapping="Wrap"/>
+
+        <!-- Python Code Input -->
+        <Label Content="Python Code:" HorizontalAlignment="Left" Margin="50,220,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="PythonCodeTextBox" HorizontalAlignment="Left" Height="100" Margin="150,220,50,0" VerticalAlignment="Top" Width="500" TextWrapping="Wrap"/>
+
+        <!-- Submit Python Code Button -->
+        <Button Content="Execute Python Code" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Height="30" Margin="50,330,0,0" Click="SubmitPythonCodeButton_Click"/>
+
+        <!-- Display Result of Python Code -->
+        <Label Content="Result:" HorizontalAlignment="Left" Margin="50,370,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="ResultTextBox" HorizontalAlignment="Left" Height="50" Margin="150,370,50,0" VerticalAlignment="Top" Width="500"/>
+
+        <!-- Job Status Display -->
+        <Label Content="Job Status:" HorizontalAlignment="Left" Margin="50,430,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="JobStatusTextBox" HorizontalAlignment="Left" Height="25" Margin="150,430,50,0" VerticalAlignment="Top" Width="500"/>
     </Grid>
 </Window>
