@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace WebAPI.Models
+﻿namespace WebAPI.Models
 {
     public class Job
     {
