@@ -109,11 +109,19 @@ namespace Client
             {
                 ScriptEngine engine = Python.CreateEngine();
                 ScriptScope scope = engine.CreateScope();
-                dynamic result = engine.Execute(pythonCode, scope);
-                return result.ToString();
+
+                try
+                {
+                    dynamic result = engine.Execute(pythonCode, scope);
+                    return result.ToString();
+                }
+                catch (Exception ex)
+                {
+                    return $"Error: {ex.Message}";
+                }
             }
             catch (Exception ex)
-            {
+            {   
                 LogError($"Error executing Python code: {ex.Message}");
                 return null;
             }

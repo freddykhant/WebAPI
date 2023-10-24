@@ -29,7 +29,7 @@
 
         <!-- Python Code Input -->
         <Label Content="Python Code:" HorizontalAlignment="Left" Margin="50,220,0,0" VerticalAlignment="Top"/>
-        <TextBox Name="PythonCodeTextBox" HorizontalAlignment="Left" Height="100" Margin="150,220,50,0" VerticalAlignment="Top" Width="500" TextWrapping="Wrap"/>
+        <TextBox Name="PythonCodeTextBox" AcceptsReturn ="True" HorizontalAlignment="Left" Height="100" Margin="150,220,50,0" VerticalAlignment="Top" Width="500" TextWrapping="Wrap"/>
 
         <!-- Submit Python Code Button -->
         <Button Content="Execute Python Code" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Height="30" Margin="50,330,0,0" Click="SubmitPythonCodeButton_Click"/>
