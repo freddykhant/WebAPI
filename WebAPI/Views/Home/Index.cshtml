@@ -1,8 +1,36 @@
-﻿@{
+﻿@model List<Client> 
+
+@{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Connected Clients</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Client ID</th>
+                <th>IP Address</th>
+                <th>Port</th>
+                <th>Completed Jobs</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var client in Model)
+            {
+                <tr>
+                    <td>@client.Id</td>
+                    <td>@client.IPAddress</td>
+                    <td>@client.Port</td>
+                    <td>@client.CompletedJobsCount</td> 
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
+
+<script>
+    setTimeout(function(){
+        location.reload();
+    }, 60000); // Refresh the page every 1 minute
+</script>

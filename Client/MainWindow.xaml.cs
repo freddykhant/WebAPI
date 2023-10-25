@@ -43,10 +43,10 @@ namespace Client
 
         private void StartThreads()
         {
-            Task.Run(() => NetworkingThreadMethodAsync()); // Start the networking method as an async task
+            Task.Run(() => NetworkingThreadMethodAsync());
 
-            //serverThread = new Thread(new ThreadStart(ServerThreadMethod));
-            //serverThread.Start();
+            serverThread = new Thread(new ThreadStart(ServerThreadMethod));
+            serverThread.Start();
         }
 
         private async Task NetworkingThreadMethodAsync()
@@ -70,7 +70,7 @@ namespace Client
                                 typeof(IRemoteService),
                                 $"http://{clientInfo.IPAddress}:{clientInfo.Port}/RemoteService");
 
-                            var job = clientRemoteService.GetJob(); // Assuming GetJob method retrieves a job
+                            var job = clientRemoteService.GetJob(); 
 
                             if (job != null && job.Status == "Ready")
                             {
@@ -78,7 +78,8 @@ namespace Client
                                 UpdateJobStatus(false);
 
                                 // Send the result back to the client that hosted the job
-                                clientRemoteService.SubmitResult(result); // Assuming SubmitResult method accepts the result
+                                ResultTextBox.Text = result;
+                                clientRemoteService.SubmitResult(result);
 
                                 // Update the job's status in the database to indicate it has been processed
                                 job.Status = "Processed";
@@ -103,6 +104,31 @@ namespace Client
                 await Task.Delay(10000);
             }
         }
+
+        private void ServerThreadMethod()
+        {
+            try
+            {
+                // Create and register the channel
+                HttpChannel channel = new HttpChannel(8100); // You can change the port if needed
+                ChannelServices.RegisterChannel(channel, false);
+
+                // Register the RemoteService for .NET Remoting
+                RemotingConfiguration.RegisterWellKnownServiceType(
+                    typeof(RemoteService),
+                    "RemoteService",
+                    WellKnownObjectMode.Singleton
+                );
+
+                // Keep the server running
+                Thread.Sleep(Timeout.Infinite);
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error in ServerThread: {ex.Message}");
+            }
+        }
+
 
 
         private string ExecutePythonJob(string pythonCode)
@@ -175,7 +201,7 @@ namespace Client
             var response = client.Execute<ClientClass>(request);
             if (response.IsSuccessful)
             {
-                clientId = response.Data.Id; // Store the client ID
+                clientId = response.Data.Id;
                 statusTextBlock.Text = $"Connected and registered to IP: {ipAddress}, Port: {port}";
             }
             else
@@ -197,11 +223,9 @@ namespace Client
             {
                 statusTextBlock.Text = "Data sent to the server.";
 
-                // Update the client's job in the database
                 var updateClientRequest = new RestRequest($"api/Clients/update/{clientId}", Method.Put);
                 updateClientRequest.AddJsonBody(new { Job = new JobClass { Code = pythonCode, Status = "Ready" } });
                 var updateResponse = client.Execute(updateClientRequest);
-                // Handle the response, e.g., check if the update was successful
             }
             else
             {
@@ -212,7 +236,7 @@ namespace Client
         private void ReceiveDataButton_Click(object sender, RoutedEventArgs e)
         {
             var client = new RestClient("http://localhost:5080");
-            var request = new RestRequest($"api/Clients/{clientId}", Method.Get); // Replace 'YourClientId' with the actual client ID
+            var request = new RestRequest($"api/Clients/{clientId}", Method.Get); 
 
             var response = client.Execute<ClientClass>(request);
             if (response.IsSuccessful && response.Data != null && response.Data.Job != null)
@@ -229,7 +253,6 @@ namespace Client
 
         private void LogError(string errorMessage)
         {
-            // This method can be expanded to log errors to a file or other logging mechanism.
             Console.WriteLine(errorMessage);
         }
 
