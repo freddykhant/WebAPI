@@ -15,7 +15,7 @@ namespace WebAPI.Controllers
         {
             if (DBManager.InsertClient(client))
             {
-                return Ok("Client registered successfully.");
+                return Ok(client);
             }
             return BadRequest("Error registering client.");
         }

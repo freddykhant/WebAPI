@@ -33,6 +33,7 @@ namespace Client
         private object lockObject = new object();
         private NetworkingThreadStatus networkingStatus = new NetworkingThreadStatus();
         private RestClient client;
+        private int? clientId = null;
 
         public MainWindow()
         {
@@ -57,15 +58,22 @@ namespace Client
                     networkingStatus.IsWorking = true;
                     var client = new RestClient("http://localhost:5080");
                     var request = new RestRequest("api/Clients/getAll", Method.Get);
-                    var response = await client.ExecuteAsync(request); // Execute the request asynchronously
+                    var response = await client.ExecuteAsync(request);
                     var clientsList = JsonConvert.DeserializeObject<List<ClientClass>>(response.Content);
 
                     foreach (var clientInfo in clientsList)
                     {
-                        if (clientInfo.Job != null)
+                        if (clientInfo.Job != null && clientInfo.Job.Status == "Ready")
                         {
                             string result = ExecutePythonJob(clientInfo.Job.Code);
                             UpdateJobStatus(false);
+
+                            // Update the job's status in the database to indicate it has been processed
+                            clientInfo.Job.Status = "Processed";
+                            var updateRequest = new RestRequest($"api/Clients/update/{clientInfo.Id}", Method.Put);
+                            updateRequest.AddJsonBody(clientInfo);
+                            var updateResponse = client.Execute(updateRequest);
+                            // Handle the response, e.g., check if the update was successful
                         }
                     }
                     networkingStatus.CompletedJobsCount = completedJobsCount;
@@ -79,9 +87,10 @@ namespace Client
                     networkingStatus.IsWorking = false;
                 }
 
-                await Task.Delay(10000); // Use async delay instead of Thread.Sleep
+                await Task.Delay(10000);
             }
         }
+
 
         private void ServerThreadMethod()
         {
@@ -164,17 +173,18 @@ namespace Client
             var request = new RestRequest("api/Clients/register", Method.Post);
             request.AddJsonBody(new { IPAddress = ipAddress, Port = port, Job = job });
 
-            var response = client.Execute(request);
+            var response = client.Execute<ClientClass>(request);
             if (response.IsSuccessful)
             {
+                clientId = response.Data.Id; // Store the client ID
                 statusTextBlock.Text = $"Connected and registered to IP: {ipAddress}, Port: {port}";
             }
             else
             {
                 statusTextBlock.Text = "Error registering client.";
             }
-        }
 
+        }
 
         private void SendDataButton_Click(object sender, RoutedEventArgs e)
         {
@@ -188,9 +198,11 @@ namespace Client
             {
                 statusTextBlock.Text = "Data sent to the server.";
 
-                // Submit the job to the .NET Remoting service's job queue
-                JobClass job = new JobClass { Code = pythonCode, Status = "Ready" };
-                remoteService.SubmitJob(job);
+                // Update the client's job in the database
+                var updateClientRequest = new RestRequest($"api/Clients/update/{clientId}", Method.Put);
+                updateClientRequest.AddJsonBody(new { Job = new JobClass { Code = pythonCode, Status = "Ready" } });
+                var updateResponse = client.Execute(updateClientRequest);
+                // Handle the response, e.g., check if the update was successful
             }
             else
             {
@@ -199,23 +211,25 @@ namespace Client
         }
 
 
+
         private void ReceiveDataButton_Click(object sender, RoutedEventArgs e)
         {
             var client = new RestClient("http://localhost:5080");
-            var request = new RestRequest("api/Jobs/all", Method.Get);
+            var request = new RestRequest($"api/Clients/{clientId}", Method.Get); // Replace 'YourClientId' with the actual client ID
 
-            var response = client.Execute<List<JobClass>>(request);
-            if (response.IsSuccessful && response.Data != null && response.Data.Count > 0)
+            var response = client.Execute<ClientClass>(request);
+            if (response.IsSuccessful && response.Data != null && response.Data.Job != null)
             {
-                var firstJob = response.Data[0];
-                statusTextBlock.Text = $"Received job with ID {firstJob.Id}: {firstJob.Code}";
-                PythonCodeTextBox.Text = firstJob.Code;
+                var job = response.Data.Job;
+                statusTextBlock.Text = $"Received job with ID {job.Id}: {job.Code}";
+                PythonCodeTextBox.Text = job.Code;
             }
             else
             {
                 statusTextBlock.Text = "No jobs received from the server.";
             }
         }
+
 
 
         private void LogError(string errorMessage)

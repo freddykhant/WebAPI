@@ -137,6 +137,7 @@ namespace WebAPI.Data
             }
         }
 
+
         // Delete a client from the database
         public static bool DeleteClient(int id)
         {
