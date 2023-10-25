@@ -28,29 +28,6 @@ namespace WebAPI.Data
             return true;
         }
 
-        // Create the Job table if it doesn't exist
-        public static bool CreateJobTable()
-        {
-            using (var connection = new SQLiteConnection(connectionString))
-            {
-                connection.Open();
-                using (var command = new SQLiteCommand(connection))
-                {
-                    command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS JobTable (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ClientId INTEGER,
-                    Status TEXT,
-                    CompletionTime DATETIME
-                )";
-                    command.ExecuteNonQuery();
-                }
-                connection.Close();
-            }
-            return true;
-        }
-
-
         // Insert a new client into the database
         public static bool InsertClient(Client client)
         {
@@ -169,6 +146,30 @@ namespace WebAPI.Data
             return true;
         }
 
+        // Create the Job table if it doesn't exist
+        public static bool CreateJobTable()
+        {
+            using (var connection = new SQLiteConnection(connectionString))
+            {
+                connection.Open();
+                using (var command = new SQLiteCommand(connection))
+                {
+                    command.CommandText = @"
+                    DROP TABLE IF EXISTS JobTable;
+                    CREATE TABLE IF NOT EXISTS JobTable (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        ClientId INTEGER,
+                        Status TEXT,
+                        Code TEXT,
+                        CompletionTime DATETIME
+                    )";
+                    command.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+            return true;
+        }
+
         public static bool InsertJob(Job job)
         {
             using (var connection = new SQLiteConnection(connectionString))
@@ -177,10 +178,11 @@ namespace WebAPI.Data
                 using (var command = new SQLiteCommand(connection))
                 {
                     command.CommandText = @"
-                    INSERT INTO JobTable (ClientId, Status, CompletionTime) 
-                    VALUES (@ClientId, @Status, @CompletionTime)";
+                    INSERT INTO JobTable (ClientId, Status, Code, CompletionTime) 
+                    VALUES (@ClientId, @Status, @Code, @CompletionTime)";
                     command.Parameters.AddWithValue("@ClientId", job.ClientId);
                     command.Parameters.AddWithValue("@Status", job.Status);
+                    command.Parameters.AddWithValue("@Code", job.Code);
                     command.Parameters.AddWithValue("@CompletionTime", job.CompletionTime);
                     command.ExecuteNonQuery();
                 }
@@ -206,7 +208,8 @@ namespace WebAPI.Data
                                 Id = reader.GetInt32(0),
                                 ClientId = reader.GetInt32(1),
                                 Status = reader.GetString(2),
-                                CompletionTime = reader.GetDateTime(3)
+                                Code = reader.GetString(3), // Fetching the Code
+                                CompletionTime = reader.GetDateTime(4)
                             });
                         }
                     }
@@ -215,6 +218,7 @@ namespace WebAPI.Data
             }
             return jobs;
         }
+
 
         public static Job GetJobById(int id)
         {
@@ -234,7 +238,8 @@ namespace WebAPI.Data
                                 Id = reader.GetInt32(0),
                                 ClientId = reader.GetInt32(1),
                                 Status = reader.GetString(2),
-                                CompletionTime = reader.GetDateTime(3)
+                                Code = reader.GetString(3), // Fetching the Code
+                                CompletionTime = reader.GetDateTime(4)
                             };
                         }
                     }
@@ -243,6 +248,7 @@ namespace WebAPI.Data
             }
             return job;
         }
+
 
         public static bool UpdateJob(Job job)
         {
@@ -253,11 +259,12 @@ namespace WebAPI.Data
                 {
                     command.CommandText = @"
                     UPDATE JobTable 
-                    SET ClientId = @ClientId, Status = @Status, CompletionTime = @CompletionTime 
+                    SET ClientId = @ClientId, Status = @Status, Code = @Code, CompletionTime = @CompletionTime 
                     WHERE Id = @Id";
                     command.Parameters.AddWithValue("@Id", job.Id);
                     command.Parameters.AddWithValue("@ClientId", job.ClientId);
                     command.Parameters.AddWithValue("@Status", job.Status);
+                    command.Parameters.AddWithValue("@Code", job.Code);
                     command.Parameters.AddWithValue("@CompletionTime", job.CompletionTime);
                     command.ExecuteNonQuery();
                 }
