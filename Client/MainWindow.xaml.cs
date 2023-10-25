@@ -79,7 +79,7 @@ namespace Client
             }
         }
 
-        /*private void ServerThreadMethod()
+        private void ServerThreadMethod()
         {
             try
             {
@@ -91,17 +91,17 @@ namespace Client
             {
                 LogError($"Error in ServerThread: {ex.Message}");
             }
-        }*/
-
-        private void ServerThreadMethod()
-        {
-            ChannelFactory<IRemoteService> foobFactory;
-            NetTcpBinding tcp = new NetTcpBinding();
-
-            string URL = "net.tcp://localhost:8100/RemoteService";
-            foobFactory = new ChannelFactory<IRemoteService>(tcp, URL);
-            remoteService = foobFactory.CreateChannel();  
         }
+
+        //private void ServerThreadMethod()
+        //{
+        //    ChannelFactory<IRemoteService> foobFactory;
+        //    NetTcpBinding tcp = new NetTcpBinding();
+
+        //    string URL = "net.tcp://localhost:8100/RemoteService";
+        //    foobFactory = new ChannelFactory<IRemoteService>(tcp, URL);
+        //    remoteService = foobFactory.CreateChannel();  
+        //}
 
         private string ExecutePythonJob(string pythonCode)
         {
