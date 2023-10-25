@@ -11,24 +11,34 @@ namespace Client
     public class RemoteService : MarshalByRefObject, IRemoteService
     {
         private Queue<string> jobQueue = new Queue<string>();
+        private object jobQueueLock = new object();
 
         public bool HasJob()
         {
-            return jobQueue.Count > 0;
+            lock (jobQueueLock)
+            {
+                return jobQueue.Count > 0;
+            }
         }
 
         public string GetJob()
         {
-            if (HasJob())
+            lock (jobQueueLock)
             {
-                return jobQueue.Dequeue();
+                if (HasJob())
+                {
+                    return jobQueue.Dequeue();
+                }
+                return null;
             }
-            return null;
         }
 
         public void SubmitJob(string job)
         {
-            jobQueue.Enqueue(job);
+            lock (jobQueueLock)
+            {
+                jobQueue.Enqueue(job);
+            }
         }
 
         public void SubmitResult(string result)
@@ -37,4 +47,5 @@ namespace Client
             Console.WriteLine($"Received result: {result}");
         }
     }
+
 }

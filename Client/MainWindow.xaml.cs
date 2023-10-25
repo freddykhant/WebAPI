@@ -31,6 +31,7 @@ namespace Client
         private int completedJobsCount = 0;
         private IRemoteService remoteService;
         private object lockObject = new object();
+        private NetworkingThreadStatus networkingStatus = new NetworkingThreadStatus();
 
         public MainWindow()
         {
@@ -52,6 +53,7 @@ namespace Client
             {
                 try
                 {
+                    networkingStatus.IsWorking = true;
                     var client = new RestClient("http://localhost:5080");
                     var request = new RestRequest("api/Clients/getAll", Method.Get);
                     var response = await client.ExecuteAsync(request); // Execute the request asynchronously
@@ -69,10 +71,15 @@ namespace Client
                             UpdateJobStatus(false);
                         }
                     }
+                    networkingStatus.CompletedJobsCount = completedJobsCount;
                 }
                 catch (Exception ex)
                 {
                     LogError($"Error in NetworkingThread: {ex.Message}");
+                }
+                finally
+                {
+                    networkingStatus.IsWorking = false;
                 }
 
                 await Task.Delay(10000); // Use async delay instead of Thread.Sleep
@@ -92,16 +99,6 @@ namespace Client
                 LogError($"Error in ServerThread: {ex.Message}");
             }
         }
-
-        //private void ServerThreadMethod()
-        //{
-        //    ChannelFactory<IRemoteService> foobFactory;
-        //    NetTcpBinding tcp = new NetTcpBinding();
-
-        //    string URL = "net.tcp://localhost:8100/RemoteService";
-        //    foobFactory = new ChannelFactory<IRemoteService>(tcp, URL);
-        //    remoteService = foobFactory.CreateChannel();  
-        //}
 
         private string ExecutePythonJob(string pythonCode)
         {
@@ -133,6 +130,19 @@ namespace Client
             string result = ExecutePythonJob(pythonCode);
             ResultTextBox.Text = result;
         }
+
+        private void QueryNetworkingThreadButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (networkingStatus.IsWorking)
+            {
+                statusTextBlock.Text = $"Networking thread is currently working. Completed jobs: {networkingStatus.CompletedJobsCount}";
+            }
+            else
+            {
+                statusTextBlock.Text = $"Networking thread is idle. Completed jobs: {networkingStatus.CompletedJobsCount}";
+            }
+        }
+
 
         private void UpdateJobStatus(bool isWorking)
         {
