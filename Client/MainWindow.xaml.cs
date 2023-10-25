@@ -184,8 +184,8 @@ namespace Client
             string pythonCode = PythonCodeTextBox.Text;
 
             var client = new RestClient("http://localhost:5080");
-            var request = new RestRequest("api/Jobs/submit", Method.Post); 
-            request.AddJsonBody(new { Code = pythonCode });
+            var request = new RestRequest("api/Jobs/submit", Method.Post);
+            request.AddJsonBody(new { Code = pythonCode, Status = "SomeStatusValue" });
 
             var response = client.Execute(request);
             if (response.IsSuccessful)
@@ -194,7 +194,7 @@ namespace Client
             }
             else
             {
-                statusTextBlock.Text = "Error sending data to the server.";
+                statusTextBlock.Text = $"Error: {response.StatusCode}. {response.Content}";
             }
         }
 
@@ -208,6 +208,7 @@ namespace Client
             {
                 var firstJob = response.Data[0];
                 statusTextBlock.Text = $"Received job with ID {firstJob.Id}: {firstJob.Code}";
+                PythonCodeTextBox.Text = firstJob.Code;
             }
             else
             {
