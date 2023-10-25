@@ -21,6 +21,7 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting; 
 using System.Runtime.Remoting.Channels.Http;
 using System.ServiceModel;
+using Server;
 
 namespace Client
 {
@@ -225,8 +226,6 @@ namespace Client
                 statusTextBlock.Text = "No jobs received from the server.";
             }
         }
-
-
 
         private void LogError(string errorMessage)
         {

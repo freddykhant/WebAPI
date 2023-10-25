@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Client
+namespace Server
 {
-    public class RemoteService : MarshalByRefObject, IRemoteService
+    [ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Single, InstanceContextMode = InstanceContextMode.Single)]
+    public class RemoteService : IRemoteService
     {
         // Sample in-memory storage for jobs. In a real-world scenario, you might use a database or other persistent storage.
         private static List<JobClass> jobs = new List<JobClass>();
