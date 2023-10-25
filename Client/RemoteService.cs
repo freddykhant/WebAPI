@@ -1,52 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Client
 {
-    [ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
     public class RemoteService : MarshalByRefObject, IRemoteService
     {
-        private Queue<JobClass> jobQueue = new Queue<JobClass>();
-        private object jobQueueLock = new object();
-
-        public bool HasJob()
-        {
-            lock (jobQueueLock)
-            {
-                return jobQueue.Count > 0;
-            }
-        }
+        // Sample in-memory storage for jobs. In a real-world scenario, you might use a database or other persistent storage.
+        private static List<JobClass> jobs = new List<JobClass>();
 
         public JobClass GetJob()
         {
-            lock (jobQueueLock)
+            // Retrieve the first job with status "Ready"
+            var job = jobs.FirstOrDefault(j => j.Status == "Ready");
+            if (job != null)
             {
-                if (HasJob())
-                {
-                    var job = jobQueue.Dequeue();
-                    job.Status = "In Progress";
-                    return job;
-                }
-                return null;
+                job.Status = "In Progress"; // Update the status to indicate that the job is being processed
             }
-        }
-
-        public void SubmitJob(JobClass job)
-        {
-            lock (jobQueueLock)
-            {
-                jobQueue.Enqueue(job);
-            }
+            return job;
         }
 
         public void SubmitResult(string result)
         {
-            // Process the result. For now, we'll just print it.
+            // For simplicity, we're just printing the result. 
+            // In a real-world scenario, you might want to store the result or perform other actions.
             Console.WriteLine($"Received result: {result}");
+        }
+
+        // Sample method to add a job to the in-memory storage (for testing purposes)
+        public void AddJob(JobClass job)
+        {
+            jobs.Add(job);
         }
     }
 

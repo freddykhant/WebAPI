@@ -29,7 +29,6 @@ namespace Client
         private Thread networkingThread;
         private Thread serverThread;
         private int completedJobsCount = 0;
-        private IRemoteService remoteService;
         private object lockObject = new object();
         private NetworkingThreadStatus networkingStatus = new NetworkingThreadStatus();
         private RestClient client;
@@ -45,8 +44,8 @@ namespace Client
         {
             Task.Run(() => NetworkingThreadMethodAsync()); // Start the networking method as an async task
 
-            serverThread = new Thread(new ThreadStart(ServerThreadMethod));
-            serverThread.Start();
+            //serverThread = new Thread(new ThreadStart(ServerThreadMethod));
+            //serverThread.Start();
         }
 
         private async Task NetworkingThreadMethodAsync()
@@ -63,17 +62,30 @@ namespace Client
 
                     foreach (var clientInfo in clientsList)
                     {
-                        if (clientInfo.Job != null && clientInfo.Job.Status == "Ready")
+                        if (clientInfo.Id != clientId) // Ensure we're not checking our own client
                         {
-                            string result = ExecutePythonJob(clientInfo.Job.Code);
-                            UpdateJobStatus(false);
+                            // Connect to the .NET Remoting server of the client
+                            IRemoteService clientRemoteService = (IRemoteService)Activator.GetObject(
+                                typeof(IRemoteService),
+                                $"http://{clientInfo.IPAddress}:{clientInfo.Port}/RemoteService");
 
-                            // Update the job's status in the database to indicate it has been processed
-                            clientInfo.Job.Status = "Processed";
-                            var updateRequest = new RestRequest($"api/Clients/update/{clientInfo.Id}", Method.Put);
-                            updateRequest.AddJsonBody(clientInfo);
-                            var updateResponse = client.Execute(updateRequest);
-                            // Handle the response, e.g., check if the update was successful
+                            var job = clientRemoteService.GetJob(); // Assuming GetJob method retrieves a job
+
+                            if (job != null && job.Status == "Ready")
+                            {
+                                string result = ExecutePythonJob(job.Code);
+                                UpdateJobStatus(false);
+
+                                // Send the result back to the client that hosted the job
+                                clientRemoteService.SubmitResult(result); // Assuming SubmitResult method accepts the result
+
+                                // Update the job's status in the database to indicate it has been processed
+                                job.Status = "Processed";
+                                var updateRequest = new RestRequest($"api/Clients/update/{clientInfo.Id}", Method.Put);
+                                updateRequest.AddJsonBody(clientInfo);
+                                var updateResponse = client.Execute(updateRequest);
+                                // Handle the response, e.g., check if the update was successful
+                            }
                         }
                     }
                     networkingStatus.CompletedJobsCount = completedJobsCount;
@@ -91,20 +103,6 @@ namespace Client
             }
         }
 
-
-        private void ServerThreadMethod()
-        {
-            try
-            {
-                HttpChannel channel = new HttpChannel(8100);
-                ChannelServices.RegisterChannel(channel, false);
-                RemotingConfiguration.RegisterWellKnownServiceType(typeof(RemoteService), "RemoteService", WellKnownObjectMode.Singleton);
-            }
-            catch (Exception ex)
-            {
-                LogError($"Error in ServerThread: {ex.Message}");
-            }
-        }
 
         private string ExecutePythonJob(string pythonCode)
         {
@@ -209,8 +207,6 @@ namespace Client
                 statusTextBlock.Text = $"Error: {response.StatusCode}. {response.Content}";
             }
         }
-
-
 
         private void ReceiveDataButton_Click(object sender, RoutedEventArgs e)
         {

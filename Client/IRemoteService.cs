@@ -1,25 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Client
 {
-    [ServiceContract]
     public interface IRemoteService
     {
-        [OperationContract]
-        bool HasJob();
-
-        [OperationContract]
+        // Method to retrieve a job from the client's .NET Remoting server
         JobClass GetJob();
 
-        [OperationContract]
-        void SubmitJob(JobClass job);
-
-        [OperationContract]
+        // Method to submit the result of a job execution back to the client's .NET Remoting server
         void SubmitResult(string result);
     }
+
 }
