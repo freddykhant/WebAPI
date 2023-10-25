@@ -14,10 +14,10 @@ namespace Client
         bool HasJob();
 
         [OperationContract]
-        string GetJob();
+        JobClass GetJob();
 
         [OperationContract]
-        void SubmitJob(string job);
+        void SubmitJob(JobClass job);
 
         [OperationContract]
         void SubmitResult(string result);

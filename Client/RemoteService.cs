@@ -10,7 +10,7 @@ namespace Client
     [ServiceBehavior(ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
     public class RemoteService : MarshalByRefObject, IRemoteService
     {
-        private Queue<string> jobQueue = new Queue<string>();
+        private Queue<JobClass> jobQueue = new Queue<JobClass>();
         private object jobQueueLock = new object();
 
         public bool HasJob()
@@ -21,19 +21,21 @@ namespace Client
             }
         }
 
-        public string GetJob()
+        public JobClass GetJob()
         {
             lock (jobQueueLock)
             {
                 if (HasJob())
                 {
-                    return jobQueue.Dequeue();
+                    var job = jobQueue.Dequeue();
+                    job.Status = "In Progress";
+                    return job;
                 }
                 return null;
             }
         }
 
-        public void SubmitJob(string job)
+        public void SubmitJob(JobClass job)
         {
             lock (jobQueueLock)
             {

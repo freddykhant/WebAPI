@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Client
 {
+    [Serializable]
     public class JobClass
     {
         public int Id { get; set; }

@@ -62,13 +62,9 @@ namespace Client
 
                     foreach (var clientInfo in clientsList)
                     {
-                        remoteService = (IRemoteService)Activator.GetObject(typeof(IRemoteService), $"http://{clientInfo.IPAddress}:{clientInfo.Port}/RemoteService");
-
-                        if (remoteService.HasJob())
+                        if (clientInfo.Job != null)
                         {
-                            string job = remoteService.GetJob();
-                            string result = ExecutePythonJob(job);
-                            remoteService.SubmitResult(result);
+                            string result = ExecutePythonJob(clientInfo.Job.Code);
                             UpdateJobStatus(false);
                         }
                     }
@@ -91,7 +87,7 @@ namespace Client
         {
             try
             {
-                HttpChannel channel = new HttpChannel(int.Parse(portTextBox.Text));
+                HttpChannel channel = new HttpChannel(8100);
                 ChannelServices.RegisterChannel(channel, false);
                 RemotingConfiguration.RegisterWellKnownServiceType(typeof(RemoteService), "RemoteService", WellKnownObjectMode.Singleton);
             }
@@ -162,10 +158,11 @@ namespace Client
         {
             string ipAddress = ipAddressTextBox.Text;
             int port = int.Parse(portTextBox.Text);
+            JobClass job = new JobClass { Code = PythonCodeTextBox.Text, Status = "Ready" };
 
             var client = new RestClient("http://localhost:5080");
             var request = new RestRequest("api/Clients/register", Method.Post);
-            request.AddJsonBody(new { IPAddress = ipAddress, Port = port });
+            request.AddJsonBody(new { IPAddress = ipAddress, Port = port, Job = job });
 
             var response = client.Execute(request);
             if (response.IsSuccessful)
@@ -182,21 +179,25 @@ namespace Client
         private void SendDataButton_Click(object sender, RoutedEventArgs e)
         {
             string pythonCode = PythonCodeTextBox.Text;
-
             var client = new RestClient("http://localhost:5080");
             var request = new RestRequest("api/Jobs/submit", Method.Post);
-            request.AddJsonBody(new { Code = pythonCode, Status = "SomeStatusValue" });
+            request.AddJsonBody(new { Code = pythonCode, Status = "Ready" });
 
             var response = client.Execute(request);
             if (response.IsSuccessful)
             {
                 statusTextBlock.Text = "Data sent to the server.";
+
+                // Submit the job to the .NET Remoting service's job queue
+                JobClass job = new JobClass { Code = pythonCode, Status = "Ready" };
+                remoteService.SubmitJob(job);
             }
             else
             {
                 statusTextBlock.Text = $"Error: {response.StatusCode}. {response.Content}";
             }
         }
+
 
         private void ReceiveDataButton_Click(object sender, RoutedEventArgs e)
         {
@@ -215,6 +216,7 @@ namespace Client
                 statusTextBlock.Text = "No jobs received from the server.";
             }
         }
+
 
         private void LogError(string errorMessage)
         {

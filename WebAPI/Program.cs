@@ -13,8 +13,6 @@ DBManager.CreateClientTable();
 DBManager.CreateJobTable();
 
 // Seed data (optional)
-DBManager.InsertClient(new Client { IPAddress = "192.168.1.1", Port = 8080 });
-DBManager.InsertClient(new Client { IPAddress = "192.168.1.2", Port = 8081 });
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
