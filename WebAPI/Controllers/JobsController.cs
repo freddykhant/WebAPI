@@ -20,6 +20,16 @@ namespace WebAPI.Controllers
             return BadRequest("Error recording job completion.");
         }
 
+        [HttpPost("submit")]
+        public IActionResult SubmitJob([FromBody] Job job)
+        {
+            if (DBManager.InsertJob(job))
+            {
+                return Ok("Job submitted successfully.");
+            }
+            return BadRequest("Error submitting job.");
+        }
+
         // Endpoint to retrieve all jobs
         [HttpGet("all")]
         public IActionResult GetAllJobs()

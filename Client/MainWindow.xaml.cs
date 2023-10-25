@@ -32,6 +32,7 @@ namespace Client
         private IRemoteService remoteService;
         private object lockObject = new object();
         private NetworkingThreadStatus networkingStatus = new NetworkingThreadStatus();
+        private RestClient client;
 
         public MainWindow()
         {
@@ -161,17 +162,57 @@ namespace Client
         {
             string ipAddress = ipAddressTextBox.Text;
             int port = int.Parse(portTextBox.Text);
-            statusTextBlock.Text = $"Connected to IP: {ipAddress}, Port: {port}";
+
+            var client = new RestClient("http://localhost:5080");
+            var request = new RestRequest("api/Clients/register", Method.Post);
+            request.AddJsonBody(new { IPAddress = ipAddress, Port = port });
+
+            var response = client.Execute(request);
+            if (response.IsSuccessful)
+            {
+                statusTextBlock.Text = $"Connected and registered to IP: {ipAddress}, Port: {port}";
+            }
+            else
+            {
+                statusTextBlock.Text = "Error registering client.";
+            }
         }
+
 
         private void SendDataButton_Click(object sender, RoutedEventArgs e)
         {
-            statusTextBlock.Text = "Data sent to the server.";
+            string pythonCode = PythonCodeTextBox.Text;
+
+            var client = new RestClient("http://localhost:5080");
+            var request = new RestRequest("api/Jobs/submit", Method.Post); 
+            request.AddJsonBody(new { Code = pythonCode });
+
+            var response = client.Execute(request);
+            if (response.IsSuccessful)
+            {
+                statusTextBlock.Text = "Data sent to the server.";
+            }
+            else
+            {
+                statusTextBlock.Text = "Error sending data to the server.";
+            }
         }
 
         private void ReceiveDataButton_Click(object sender, RoutedEventArgs e)
         {
-            statusTextBlock.Text = "Data received from the server.";
+            var client = new RestClient("http://localhost:5080");
+            var request = new RestRequest("api/Jobs/all", Method.Get);
+
+            var response = client.Execute<List<JobClass>>(request);
+            if (response.IsSuccessful && response.Data != null && response.Data.Count > 0)
+            {
+                var firstJob = response.Data[0];
+                statusTextBlock.Text = $"Received job with ID {firstJob.Id}: {firstJob.Code}";
+            }
+            else
+            {
+                statusTextBlock.Text = "No jobs received from the server.";
+            }
         }
 
         private void LogError(string errorMessage)
@@ -179,5 +220,6 @@ namespace Client
             // This method can be expanded to log errors to a file or other logging mechanism.
             Console.WriteLine(errorMessage);
         }
+
     }
 }
