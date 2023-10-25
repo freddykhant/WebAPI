@@ -16,11 +16,12 @@ namespace WebAPI.Data
                 using (var command = new SQLiteCommand(connection))
                 {
                     command.CommandText = @"
-                        CREATE TABLE IF NOT EXISTS ClientTable (
-                            Id INTEGER PRIMARY KEY,
-                            IPAddress TEXT,
-                            Port INTEGER
-                        )";
+                CREATE TABLE IF NOT EXISTS ClientTable (
+                    Id INTEGER PRIMARY KEY,
+                    IPAddress TEXT,
+                    Port INTEGER,
+                    JobId INTEGER REFERENCES JobTable(Id)
+                )";
                     command.ExecuteNonQuery();
                 }
                 connection.Close();
@@ -37,10 +38,12 @@ namespace WebAPI.Data
                 using (var command = new SQLiteCommand(connection))
                 {
                     command.CommandText = @"
-                        INSERT INTO ClientTable (IPAddress, Port) 
-                        VALUES (@IPAddress, @Port)";
+                    INSERT INTO ClientTable (IPAddress, Port, JobId) 
+                    VALUES (@IPAddress, @Port, @JobId)";
                     command.Parameters.AddWithValue("@IPAddress", client.IPAddress);
                     command.Parameters.AddWithValue("@Port", client.Port);
+                    command.Parameters.AddWithValue("@JobId", client.Job?.Id);
+
                     command.ExecuteNonQuery();
                 }
                 connection.Close();
@@ -65,8 +68,10 @@ namespace WebAPI.Data
                             {
                                 Id = reader.GetInt32(0),
                                 IPAddress = reader.GetString(1),
-                                Port = reader.GetInt32(2)
+                                Port = reader.GetInt32(2),
+                                Job = new Job { Id = reader.GetInt32(3) } 
                             });
+
                         }
                     }
                 }
@@ -93,8 +98,10 @@ namespace WebAPI.Data
                             {
                                 Id = reader.GetInt32(0),
                                 IPAddress = reader.GetString(1),
-                                Port = reader.GetInt32(2)
+                                Port = reader.GetInt32(2),
+                                Job = new Job { Id = reader.GetInt32(3) } 
                             };
+
                         }
                     }
                 }
@@ -113,12 +120,14 @@ namespace WebAPI.Data
                 using (var command = new SQLiteCommand(connection))
                 {
                     command.CommandText = @"
-                UPDATE ClientTable 
-                SET IPAddress = @IPAddress, Port = @Port 
-                WHERE Id = @Id";
+                    UPDATE ClientTable 
+                    SET IPAddress = @IPAddress, Port = @Port, JobId = @JobId
+                    WHERE Id = @Id";
                     command.Parameters.AddWithValue("@Id", updatedClient.Id);
                     command.Parameters.AddWithValue("@IPAddress", updatedClient.IPAddress);
                     command.Parameters.AddWithValue("@Port", updatedClient.Port);
+                    command.Parameters.AddWithValue("@JobId", updatedClient.Job?.Id); // Assuming Job has an Id field
+
 
                     int affectedRows = command.ExecuteNonQuery();
                     connection.Close();
@@ -127,7 +136,6 @@ namespace WebAPI.Data
                 }
             }
         }
-
 
         // Delete a client from the database
         public static bool DeleteClient(int id)
@@ -158,7 +166,6 @@ namespace WebAPI.Data
                     DROP TABLE IF EXISTS JobTable;
                     CREATE TABLE IF NOT EXISTS JobTable (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        ClientId INTEGER,
                         Status TEXT,
                         Code TEXT,
                         CompletionTime DATETIME
@@ -178,9 +185,8 @@ namespace WebAPI.Data
                 using (var command = new SQLiteCommand(connection))
                 {
                     command.CommandText = @"
-                    INSERT INTO JobTable (ClientId, Status, Code, CompletionTime) 
-                    VALUES (@ClientId, @Status, @Code, @CompletionTime)";
-                    command.Parameters.AddWithValue("@ClientId", job.ClientId);
+                    INSERT INTO JobTable (Status, Code, CompletionTime) 
+                    VALUES (@Status, @Code, @CompletionTime)";
                     command.Parameters.AddWithValue("@Status", job.Status);
                     command.Parameters.AddWithValue("@Code", job.Code);
                     command.Parameters.AddWithValue("@CompletionTime", job.CompletionTime);
@@ -206,10 +212,9 @@ namespace WebAPI.Data
                             jobs.Add(new Job
                             {
                                 Id = reader.GetInt32(0),
-                                ClientId = reader.GetInt32(1),
-                                Status = reader.GetString(2),
-                                Code = reader.GetString(3), // Fetching the Code
-                                CompletionTime = reader.GetDateTime(4)
+                                Status = reader.GetString(1),
+                                Code = reader.GetString(2), // Fetching the Code
+                                CompletionTime = reader.GetDateTime(3)
                             });
                         }
                     }
@@ -218,7 +223,6 @@ namespace WebAPI.Data
             }
             return jobs;
         }
-
 
         public static Job GetJobById(int id)
         {
@@ -236,10 +240,9 @@ namespace WebAPI.Data
                             job = new Job
                             {
                                 Id = reader.GetInt32(0),
-                                ClientId = reader.GetInt32(1),
-                                Status = reader.GetString(2),
-                                Code = reader.GetString(3), // Fetching the Code
-                                CompletionTime = reader.GetDateTime(4)
+                                Status = reader.GetString(1),
+                                Code = reader.GetString(2), // Fetching the Code
+                                CompletionTime = reader.GetDateTime(3)
                             };
                         }
                     }
@@ -259,10 +262,9 @@ namespace WebAPI.Data
                 {
                     command.CommandText = @"
                     UPDATE JobTable 
-                    SET ClientId = @ClientId, Status = @Status, Code = @Code, CompletionTime = @CompletionTime 
+                    SET Status = @Status, Code = @Code, CompletionTime = @CompletionTime 
                     WHERE Id = @Id";
                     command.Parameters.AddWithValue("@Id", job.Id);
-                    command.Parameters.AddWithValue("@ClientId", job.ClientId);
                     command.Parameters.AddWithValue("@Status", job.Status);
                     command.Parameters.AddWithValue("@Code", job.Code);
                     command.Parameters.AddWithValue("@CompletionTime", job.CompletionTime);
