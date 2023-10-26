@@ -292,5 +292,27 @@ namespace WebAPI.Data
             return true;
         }
 
+        public static void deleteDB()
+        {
+            string filePath = @"C:\Users\fredd\source\repos\WebAPI\WebAPI\clientsdatabase.db";
+
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    File.Delete(filePath);
+                    Console.WriteLine("File deleted successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error deleting file: {ex.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("File does not exist.");
+            }
+        }
+
     }
 }
