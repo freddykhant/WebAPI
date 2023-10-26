@@ -21,7 +21,6 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting; 
 using System.Runtime.Remoting.Channels.Http;
 using System.ServiceModel;
-using Server;
 
 namespace Client
 {
@@ -273,7 +272,7 @@ namespace Client
 
         private void LogError(string errorMessage)
         {
-            Console.WriteLine(errorMessage);
+            MessageBox.Show(errorMessage);
         }
 
     }
