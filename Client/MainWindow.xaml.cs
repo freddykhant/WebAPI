@@ -37,7 +37,6 @@ namespace Client
         public MainWindow()
         {
             InitializeComponent();
-            StartThreads();
         }
 
         private void StartThreads()
@@ -204,6 +203,7 @@ namespace Client
                 if (portStatus.status == true)
                 {
                     statusTextBlock.Text = $"Error: Port {port} is already registered.";
+                    StartThreads();
                     return;
                 }
             }
