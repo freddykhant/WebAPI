@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Http;
+using System.Runtime.Remoting.Channels.Tcp;
 
 namespace Server
 {
@@ -13,18 +12,20 @@ namespace Server
         {
             Console.WriteLine("Welcome to the Client's Job Board Server");
 
-            ServiceHost host;
-            NetTcpBinding tcp = new NetTcpBinding();
-            tcp.MaxReceivedMessageSize = 2147483647;
+            // Register the HTTP channel
+            HttpChannel channel = new HttpChannel(8100);
+            ChannelServices.RegisterChannel(channel, false);
 
-            host = new ServiceHost(typeof(RemoteService));
-            host.AddServiceEndpoint(typeof(IRemoteService), tcp, "net.tcp://0.0.0.0:8100/JobService");
+            // Register the RemoteService for .NET Remoting
+            RemotingConfiguration.RegisterWellKnownServiceType(
+                typeof(RemoteService),
+                "RemoteService",
+                WellKnownObjectMode.Singleton
+            );
 
-            host.Open();
             Console.WriteLine("Server is online. Press Enter to stop.");
             Console.ReadLine();
-
-            host.Close();
         }
     }
 }
+

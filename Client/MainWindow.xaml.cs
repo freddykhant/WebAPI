@@ -110,7 +110,7 @@ namespace Client
             try
             {
                 // Create and register the channel
-                HttpChannel channel = new HttpChannel(8100); // You can change the port if needed
+                HttpChannel channel = new HttpChannel(int.Parse(portTextBox.Text)); 
                 ChannelServices.RegisterChannel(channel, false);
 
                 // Register the RemoteService for .NET Remoting
@@ -188,28 +188,48 @@ namespace Client
             }
         }
 
-        private void ConnectButton_Click(object sender, RoutedEventArgs e)
+        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
             string ipAddress = ipAddressTextBox.Text;
             int port = int.Parse(portTextBox.Text);
             JobClass job = new JobClass { Code = PythonCodeTextBox.Text, Status = "Ready" };
 
             var client = new RestClient("http://localhost:5080");
-            var request = new RestRequest("api/Clients/register", Method.Post);
-            request.AddJsonBody(new { IPAddress = ipAddress, Port = port, Job = job });
 
-            var response = client.Execute<ClientClass>(request);
-            if (response.IsSuccessful)
+            // Check if the port is already registered
+            var checkPortRequest = new RestRequest($"api/Clients/isPortRegistered/{port}", Method.Get);
+            var checkPortResponse = await client.ExecuteAsync(checkPortRequest);
+            if (checkPortResponse.IsSuccessful)
             {
-                clientId = response.Data.Id;
+                var portStatus = JsonConvert.DeserializeObject<dynamic>(checkPortResponse.Content);
+                if (portStatus.status == true)
+                {
+                    statusTextBlock.Text = $"Error: Port {port} is already registered.";
+                    return;
+                }
+            }
+            else
+            {
+                statusTextBlock.Text = "Error checking port status.";
+                return;
+            }
+
+            // If the port is not registered, proceed with the registration
+            var registerRequest = new RestRequest("api/Clients/register", Method.Post);
+            registerRequest.AddJsonBody(new { IPAddress = ipAddress, Port = port, Job = job });
+
+            var registerResponse = client.Execute<ClientClass>(registerRequest);
+            if (registerResponse.IsSuccessful)
+            {
+                clientId = registerResponse.Data.Id;
                 statusTextBlock.Text = $"Connected and registered to IP: {ipAddress}, Port: {port}";
             }
             else
             {
                 statusTextBlock.Text = "Error registering client.";
             }
-
         }
+
 
         private void SendDataButton_Click(object sender, RoutedEventArgs e)
         {

@@ -56,5 +56,18 @@ namespace WebAPI.Controllers
             }
             return BadRequest($"Error deleting client with ID {id}.");
         }
+
+        // Check if a port is already registered
+        [HttpGet("isPortRegistered/{port}")]
+        public IActionResult IsPortRegistered(int port)
+        {
+            bool isRegistered = DBManager.IsPortRegistered(port);
+            if (isRegistered)
+            {
+                return Ok(new { status = true, message = $"Port: {port} is already registered." });
+            }
+            return Ok(new { status = false, message = $"Port: {port} is available." });
+        }
+
     }
 }

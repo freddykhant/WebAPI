@@ -253,6 +253,22 @@ namespace WebAPI.Data
             return job;
         }
 
+        public static bool IsPortRegistered(int port)
+        {
+            using (var connection = new SQLiteConnection(connectionString))
+            {
+                connection.Open();
+                using (var command = new SQLiteCommand("SELECT COUNT(*) FROM ClientTable WHERE Port = @Port", connection))
+                {
+                    command.Parameters.AddWithValue("@Port", port);
+                    int count = Convert.ToInt32(command.ExecuteScalar());
+                    connection.Close();
+                    return count > 0; // Return true if the port is already registered
+                }
+            }
+        }
+
+
 
         public static bool UpdateJob(Job job)
         {
