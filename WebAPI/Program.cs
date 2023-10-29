@@ -12,12 +12,11 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 
 var app = builder.Build();
 
-// delete the old db if there is one
+// Delete the old database
 DBManager.deleteDB();
 
 // Initialize database tables
 DBManager.CreateClientTable();
-DBManager.CreateJobTable();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

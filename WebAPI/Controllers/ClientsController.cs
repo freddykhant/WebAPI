@@ -32,41 +32,25 @@ namespace WebAPI.Controllers
             return NotFound("No clients found.");
         }
 
-        // Update a client's details
-        // PUT api/clients/{id}
-        [HttpPut("{id}")]
-        public IActionResult UpdateClient(int id, [FromBody] Client updatedClient)
-        {
-            updatedClient.Id = id; // Ensure the ID from the route is set on the client object
-            if (DBManager.UpdateClient(updatedClient))
-            {
-                return Ok("Client updated successfully.");
-            }
-            return BadRequest("Error updating client.");
-        }
-
-
         // Delete a client
-        [HttpDelete("delete/{id}")]
-        public IActionResult DeleteClient(int id)
+        [HttpPost("delete")]
+        public IActionResult DeleteClient([FromBody] Client client)
         {
-            if (DBManager.DeleteClient(id))
+            if (DBManager.DeleteClient(client))
             {
                 return Ok("Client deleted successfully.");
             }
-            return BadRequest($"Error deleting client with ID {id}.");
+            return BadRequest($"Error deleting client");
         }
 
-        // Check if a port is already registered
-        [HttpGet("isPortRegistered/{port}")]
-        public IActionResult IsPortRegistered(int port)
+        [HttpPut("updateJobs")]
+        public IActionResult UpdateClientJobs([FromBody] Client client)
         {
-            bool isRegistered = DBManager.IsPortRegistered(port);
-            if (isRegistered)
+            if (DBManager.UpdateClientJobs(client))
             {
-                return Ok(new { status = true, message = $"Port: {port} is already registered." });
+                return Ok("Successfully updated");
             }
-            return Ok(new { status = false, message = $"Port: {port} is available." });
+            return BadRequest("Error in data update");
         }
 
     }

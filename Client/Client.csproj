@@ -129,10 +129,9 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ClientClass.cs" />
-    <Compile Include="IRemoteService.cs" />
-    <Compile Include="JobClass.cs" />
     <Compile Include="NetworkingThreadStatus.cs" />
-    <Compile Include="RemoteService.cs" />
+    <Compile Include="Server.cs" />
+    <Compile Include="ServerInterface.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

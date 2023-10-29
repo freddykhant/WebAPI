@@ -22,10 +22,12 @@
         <Button Content="Send Data" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="200,70,0,0" Click="SendDataButton_Click"/>
 
         <!-- Receive Data Button -->
-        <Button Content="Receive Data" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="350,70,0,0" Click="ReceiveDataButton_Click"/>
 
         <!-- Status TextBlock to display messages -->
         <TextBlock Name="statusTextBlock" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="50,110,0,0" Width="500" Height="100" TextWrapping="Wrap"/>
+
+        <!-- Progress bar to show job progress -->
+        <ProgressBar Name="JobProgressBar" IsIndeterminate="true" HorizontalAlignment="Left" Height="20" Margin="505,75,0,0" VerticalAlignment="Top" Width="154"/>
 
         <!-- Python Code Input -->
         <Label Content="Python Code:" HorizontalAlignment="Left" Margin="50,220,0,0" VerticalAlignment="Top"/>

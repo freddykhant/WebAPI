@@ -26,17 +26,25 @@ namespace Client
 {
     public partial class MainWindow : Window
     {
+        private ClientClass _client;
         private Thread networkingThread;
         private Thread serverThread;
+        NetworkingThreadStatus networkingStatus;
         private int completedJobsCount = 0;
         private object lockObject = new object();
-        private NetworkingThreadStatus networkingStatus = new NetworkingThreadStatus();
         private RestClient client;
         private int? clientId = null;
+        ChannelFactory<ServerInterface> factory;
+        NetTcpBinding binding;
+        string URL;
+        ServerInterface channel;
+
+        private volatile bool stop = false;
 
         public MainWindow()
         {
             InitializeComponent();
+            JobProgressBar.Visibility = Visibility.Hidden;
         }
 
         private void StartThreads()
@@ -49,46 +57,71 @@ namespace Client
 
         private async Task NetworkingThreadMethodAsync()
         {
-            while (true)
+            networkingStatus = new NetworkingThreadStatus();
+
+            while (!stop)
             {
                 try
                 {
-                    networkingStatus.IsWorking = true;
                     var client = new RestClient("http://localhost:5080");
                     var request = new RestRequest("api/Clients/getAll", Method.Get);
                     var response = await client.ExecuteAsync(request);
                     var clientsList = JsonConvert.DeserializeObject<List<ClientClass>>(response.Content);
 
-                    foreach (var clientInfo in clientsList)
+                    foreach (ClientClass clientInfo in clientsList)
                     {
                         if (clientInfo.Id != clientId) // Ensure we're not checking our own client
                         {
-                            // Connect to the .NET Remoting server of the client
-                            IRemoteService clientRemoteService = (IRemoteService)Activator.GetObject(
-                                typeof(IRemoteService),
-                                $"http://{clientInfo.IPAddress}:{clientInfo.Port}/RemoteService");
+                            binding = new NetTcpBinding();
+                            URL = "net.tcp://" + ipAddressTextBox.Text + ":" + portTextBox.Text;
+                            factory = new ChannelFactory<ServerInterface>(binding, URL);
+                            channel = factory.CreateChannel();
 
-                            var job = clientRemoteService.GetJob(); 
-
-                            if (job != null && job.Status == "Ready")
+                            if(channel.HasJob())
                             {
-                                string result = ExecutePythonJob(job.Code);
-                                UpdateJobStatus(false);
+                                Dispatcher.Invoke(() =>
+                                {
+                                    statusTextBlock.Text = "Working on job...";
+                                    JobProgressBar.Visibility = Visibility.Visible;
+                                });
+                            }
 
-                                // Send the result back to the client that hosted the job
-                                ResultTextBox.Text = result;
-                                clientRemoteService.SubmitResult(result);
+                            string job = PythonCodeTextBox.Text;
 
-                                // Update the job's status in the database to indicate it has been processed
-                                job.Status = "Processed";
-                                var updateRequest = new RestRequest($"api/Clients/update/{clientInfo.Id}", Method.Put);
-                                updateRequest.AddJsonBody(clientInfo);
-                                var updateResponse = client.Execute(updateRequest);
-                                // Handle the response, e.g., check if the update was successful
+                            if (job != null)
+                            {
+                                string result = ExecutePythonJob(job);
+                                channel.SubmitResult(result.ToString());
+
+                                UpdateJobStatus();
+
+                                client = new RestClient("http://localhost:5080");
+                                request = new RestRequest("api/Clients/updateJobs", Method.Put);
+                                request.AddJsonBody(_client);
+                                response = client.Execute(request);
+
+                                Dispatcher.Invoke(() =>
+                                {
+                                    JobProgressBar.Visibility = Visibility.Hidden;
+                                });
                             }
                         }
                     }
                     networkingStatus.CompletedJobsCount = completedJobsCount;
+
+                    binding = new NetTcpBinding();
+                    URL = "net.tcp://" + ipAddressTextBox.Text + ":" + portTextBox.Text;
+                    factory = new ChannelFactory<ServerInterface>(binding, URL);
+                    channel = factory.CreateChannel();
+
+                    if (channel.GetResult() != null)
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            ResultTextBox.Text = channel.GetResult();
+                        });
+                        channel.SubmitResult(null);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -105,26 +138,18 @@ namespace Client
 
         private void ServerThreadMethod()
         {
-            try
-            {
-                // Create and register the channel
-                HttpChannel channel = new HttpChannel(int.Parse(portTextBox.Text)); 
-                ChannelServices.RegisterChannel(channel, false);
+            Console.WriteLine("Welcome to Jobs Server");
+            ServiceHost host;
+            NetTcpBinding tcp = new NetTcpBinding();
+            host = new ServiceHost(typeof(Server));
+            host.AddServiceEndpoint(typeof(ServerInterface), tcp,
+            "net.tcp://" + ipAddressTextBox.Text + ":" + portTextBox.Text);
+            host.Open();
+            Console.WriteLine("System Online");
+            Console.ReadLine();
 
-                // Register the RemoteService for .NET Remoting
-                RemotingConfiguration.RegisterWellKnownServiceType(
-                    typeof(RemoteService),
-                    "RemoteService",
-                    WellKnownObjectMode.Singleton
-                );
-
-                // Keep the server running
-                Thread.Sleep(Timeout.Infinite);
-            }
-            catch (Exception ex)
-            {
-                LogError($"Error in ServerThread: {ex.Message}");
-            }
+            Thread.Sleep(Timeout.Infinite);
+            host.Close();
         }
 
 
@@ -173,101 +198,61 @@ namespace Client
         }
 
 
-        private void UpdateJobStatus(bool isWorking)
+        private void UpdateJobStatus()
         {
-            if (isWorking)
-            {
-                JobStatusTextBox.Text = "Working on a job...";
-            }
-            else
-            {
-                completedJobsCount++;
-                JobStatusTextBox.Text = $"Completed {completedJobsCount} jobs.";
-            }
+            completedJobsCount++;
+            JobStatusTextBox.Text = $"Completed {completedJobsCount} jobs.";
         }
 
-        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
+        private void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
-            string ipAddress = ipAddressTextBox.Text;
-            int port = int.Parse(portTextBox.Text);
-            JobClass job = new JobClass { Code = PythonCodeTextBox.Text, Status = "Ready" };
+            _client = new ClientClass();
+            _client.Port = int.Parse(portTextBox.Text);
+            _client.IPAddress = ipAddressTextBox.Text;
+            _client.CompletedJobsCount = 0;
 
-            var client = new RestClient("http://localhost:5080");
+            string ipAddress = _client.IPAddress;
+            int port = _client.Port;
 
             // Check if the port is already registered
-            var checkPortRequest = new RestRequest($"api/Clients/isPortRegistered/{port}", Method.Get);
-            var checkPortResponse = await client.ExecuteAsync(checkPortRequest);
-            if (checkPortResponse.IsSuccessful)
+            var client = new RestClient("http://localhost:5080");
+            var request = new RestRequest("api/Clients/getAll", Method.Get);
+            var response = client.Execute(request);
+            var clientsList = JsonConvert.DeserializeObject<List<ClientClass>>(response.Content);
+
+            foreach (ClientClass clientInfo in clientsList)
             {
-                var portStatus = JsonConvert.DeserializeObject<dynamic>(checkPortResponse.Content);
-                if (portStatus.status == true)
+                if (clientInfo.Port == port)
                 {
-                    statusTextBlock.Text = $"Error: Port {port} is already registered.";
-                    StartThreads();
+                    statusTextBlock.Text = "Error checking port status.";
                     return;
                 }
             }
-            else
-            {
-                statusTextBlock.Text = "Error checking port status.";
-                return;
-            }
-
-            // If the port is not registered, proceed with the registration
-            var registerRequest = new RestRequest("api/Clients/register", Method.Post);
-            registerRequest.AddJsonBody(new { IPAddress = ipAddress, Port = port, Job = job });
-
-            var registerResponse = client.Execute<ClientClass>(registerRequest);
-            if (registerResponse.IsSuccessful)
-            {
-                clientId = registerResponse.Data.Id;
-                statusTextBlock.Text = $"Connected and registered to IP: {ipAddress}, Port: {port}";
-            }
-            else
-            {
-                statusTextBlock.Text = "Error registering client.";
-            }
+            StartThreads();
         }
 
 
         private void SendDataButton_Click(object sender, RoutedEventArgs e)
         {
-            string pythonCode = PythonCodeTextBox.Text;
-            var client = new RestClient("http://localhost:5080");
-            var request = new RestRequest("api/Jobs/submit", Method.Post);
-            request.AddJsonBody(new { Code = pythonCode, Status = "Ready" });
 
-            var response = client.Execute(request);
-            if (response.IsSuccessful)
-            {
-                statusTextBlock.Text = "Data sent to the server.";
+            ChannelFactory<ServerInterface> factory;
+            NetTcpBinding tcp = new NetTcpBinding();
+            URL = "net.tcp://" + ipAddressTextBox.Text + ":" + portTextBox.Text;
+            factory = new ChannelFactory<ServerInterface>(tcp, URL);
+            ServerInterface channel = factory.CreateChannel();
 
-                var updateClientRequest = new RestRequest($"api/Clients/update/{clientId}", Method.Put);
-                updateClientRequest.AddJsonBody(new { Job = new JobClass { Code = pythonCode, Status = "Ready" } });
-                var updateResponse = client.Execute(updateClientRequest);
-            }
-            else
-            {
-                statusTextBlock.Text = $"Error: {response.StatusCode}. {response.Content}";
-            }
+            string job = PythonCodeTextBox.Text;
+            channel.SubmitJob(job);      
         }
 
-        private void ReceiveDataButton_Click(object sender, RoutedEventArgs e)
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            var client = new RestClient("http://localhost:5080");
-            var request = new RestRequest($"api/Clients/{clientId}", Method.Get); 
+            stop = true;
 
-            var response = client.Execute<ClientClass>(request);
-            if (response.IsSuccessful && response.Data != null && response.Data.Job != null)
-            {
-                var job = response.Data.Job;
-                statusTextBlock.Text = $"Received job with ID {job.Id}: {job.Code}";
-                PythonCodeTextBox.Text = job.Code;
-            }
-            else
-            {
-                statusTextBlock.Text = "No jobs received from the server.";
-            }
+            RestClient client = new RestClient("http://localhost:5080");
+            RestRequest request = new RestRequest("api/Clients/delete", Method.Put);
+            request.AddJsonBody(_client);
+            RestResponse restResponse = client.Execute(request);
         }
 
         private void LogError(string errorMessage)

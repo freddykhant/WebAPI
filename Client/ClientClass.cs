@@ -11,7 +11,6 @@ namespace Client
         public int Id { get; set; }
         public string IPAddress { get; set; }
         public int Port { get; set; }
-        public JobClass Job { get; set; }
         public int CompletedJobsCount { get; set; }
     }
 }
